@@ -1,0 +1,44 @@
+package glue
+
+import (
+	"fmt"
+
+	"github.com/oskbor/bridge/signal"
+	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/types/events"
+)
+
+type Glue struct {
+	wa *whatsmeow.Client
+	si *signal.Client
+}
+
+func (g *Glue) onWhatsAppEvent(evt interface{}) {
+	switch v := evt.(type) {
+	case *events.Message:
+		// find which conversation this message belongs to
+		// check if corresponding signal conversation exists
+		// if not create, then send the message
+		fmt.Printf("Received a message! \n\n %+v\n\n", v)
+	default:
+		fmt.Printf("Received an unhandled event! \n\n %+v\n\n", v)
+	}
+
+}
+func (g *Glue) onSignalMessage(message signal.ReceivedMessage) {
+	fmt.Println("got message", message)
+
+}
+
+func New(whatsmeow *whatsmeow.Client, si *signal.Client) *Glue {
+
+	g := &Glue{
+		wa: whatsmeow,
+		si: si,
+	}
+
+	g.wa.AddEventHandler(g.onWhatsAppEvent)
+	g.si.OnMessage(g.onSignalMessage)
+	return g
+
+}
