@@ -29,7 +29,7 @@ func NewStore(db *sql.DB) (*Store, error) {
 	return s, err
 }
 
-func (r *Store) migrate() error {
+func (s *Store) migrate() error {
 	query := `
     CREATE TABLE IF NOT EXISTS glue(
         whatsapp_conversation TEXT NOT NULL, -- can refer to a group or DM
@@ -40,6 +40,46 @@ func (r *Store) migrate() error {
     );
     `
 
-	_, err := r.db.Exec(query)
+	_, err := s.db.Exec(query)
+	return err
+}
+
+func (s *Store) GetSignalGroupId(whatsappConversation, whatsappPhoneNumber, signalPhoneNumber string) (string, error) {
+	query := `
+	SELECT signal_group
+	FROM glue
+	WHERE whatsapp_conversation = ?
+	AND whatsapp_phonenumber = ?
+	AND signal_phonenumber = ?
+	`
+	var signalGroupId string
+	err := s.db.QueryRow(query, whatsappConversation, whatsappPhoneNumber, signalPhoneNumber).Scan(&signalGroupId)
+	if err != nil {
+		return "", err
+	}
+	return signalGroupId, nil
+}
+
+func (s *Store) GetWhatsAppConversationId(signalGroupId, signalPhoneNumber, whatsappPhoneNumber string) (string, error) {
+	query := `
+	SELECT whatsapp_conversation
+	FROM glue
+	WHERE signal_group = ?
+	AND signal_phonenumber = ?
+	AND whatsapp_phonenumber = ?
+	`
+	var whatsappGroupId string
+	err := s.db.QueryRow(query, signalGroupId, signalPhoneNumber, whatsappPhoneNumber).Scan(&whatsappGroupId)
+	if err != nil {
+		return "", err
+	}
+	return whatsappGroupId, nil
+}
+func (s *Store) LinkGroups(whatsappConversation, whatsappPhoneNumber, signalGroupId, signalPhoneNumber string) error {
+	query := `
+	INSERT INTO glue(whatsapp_conversation, whatsapp_phonenumber, signal_group, signal_phonenumber)
+	VALUES(?, ?, ?, ?)
+	`
+	_, err := s.db.Exec(query, whatsappConversation, whatsappPhoneNumber, signalGroupId, signalPhoneNumber)
 	return err
 }
