@@ -32,8 +32,11 @@ func NewStore(db *sql.DB) (*Store, error) {
 func (r *Store) migrate() error {
 	query := `
     CREATE TABLE IF NOT EXISTS glue(
-        whatsapp TEXT NOT NULL UNIQUE,
-        signal TEXT NOT NULL UNIQUE
+        whatsapp_conversation TEXT NOT NULL, -- can refer to a group or DM
+		whatsapp_phonenumber TEXT NOT NULL,  
+        signal_group TEXT NOT NULL UNIQUE,
+		signal_phonenumber TEXT NOT NULL,
+		PRIMARY KEY(signal_phonenumber, whatsapp_phonenumber, whatsapp_conversation)
     );
     `
 

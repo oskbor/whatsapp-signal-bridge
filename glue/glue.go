@@ -1,6 +1,7 @@
 package glue
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/oskbor/bridge/signal"
@@ -9,8 +10,9 @@ import (
 )
 
 type Glue struct {
-	wa *whatsmeow.Client
-	si *signal.Client
+	wa    *whatsmeow.Client
+	si    *signal.Client
+	store *Store
 }
 
 func (g *Glue) onWhatsAppEvent(evt interface{}) {
@@ -31,10 +33,18 @@ func (g *Glue) onSignalMessage(message signal.ReceivedMessage) {
 }
 
 func New(whatsmeow *whatsmeow.Client, si *signal.Client) *Glue {
-
+	db, err := sql.Open("sqlite3", "file:glue.db?_foreign_keys=on")
+	if err != nil {
+		panic(fmt.Errorf("failed to open database: %w", err))
+	}
+	store, err := NewStore(db)
+	if err != nil {
+		panic(fmt.Errorf("failed to create store: %w", err))
+	}
 	g := &Glue{
-		wa: whatsmeow,
-		si: si,
+		wa:    whatsmeow,
+		si:    si,
+		store: store,
 	}
 
 	g.wa.AddEventHandler(g.onWhatsAppEvent)
