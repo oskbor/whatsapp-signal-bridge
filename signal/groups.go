@@ -36,7 +36,7 @@ func (s GroupLink) String() string {
 type Permission int
 
 const (
-	OnlyAdmins = iota
+	OnlyAdmins Permission = iota
 	EveryMember
 )
 
