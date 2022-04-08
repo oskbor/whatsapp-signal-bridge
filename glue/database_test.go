@@ -33,16 +33,14 @@ func TestMain(m *testing.M) {
 
 func TestDbBasics(t *testing.T) {
 	t.Run("Link two conversations and query from both sides", func(t *testing.T) {
-		waNumber := "+123"
-		signalNumber := "+456"
-		waConversation := "group1"
-		signalGroup := "group2"
-		err := store.LinkGroups(waConversation, waNumber, signalGroup, signalNumber)
+		waConversation := "whatsappGroup1"
+		signalGroup := "signalGroup2"
+		err := store.LinkGroups(waConversation, signalGroup)
 		require.Nil(t, err)
-		waGroupId, err := store.GetWhatsAppConversationId(signalGroup, signalNumber, waNumber)
+		waGroupId, err := store.GetWhatsAppConversationId(signalGroup)
 		require.Nil(t, err)
 		require.Equal(t, waGroupId, waConversation)
-		signalGroupId, err := store.GetSignalGroupId(waConversation, waNumber, signalNumber)
+		signalGroupId, err := store.GetSignalGroupId(waConversation)
 		require.Nil(t, err)
 		require.Equal(t, signalGroupId, signalGroup)
 	})
