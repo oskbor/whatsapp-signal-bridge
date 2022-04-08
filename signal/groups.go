@@ -45,7 +45,12 @@ func (s Permission) String() string {
 	return stringMap[s]
 }
 
-func (c *Client) CreateGroup(name, description string, groupLink GroupLink, members []string, addMembers, EditGroup Permission) error {
+type createGroupResponse struct {
+	Id    string `json:"id"`
+	Error string `json:"error"`
+}
+
+func (c *Client) CreateGroup(name, description string, groupLink GroupLink, members []string, addMembers, EditGroup Permission) (string, error) {
 	body, err := json.Marshal(createGroupBody{
 		Description: description,
 		GroupLink:   groupLink.String(),
@@ -57,18 +62,26 @@ func (c *Client) CreateGroup(name, description string, groupLink GroupLink, memb
 		},
 	})
 	if err != nil {
-		return nil
+		return "", err
 	}
 	res, err := http.Post("http://"+c.config.Host+"/v1/groups/"+c.config.Number, "application/json", bytes.NewReader(body))
-	if res.StatusCode != 200 {
-		respBody, err := io.ReadAll(res.Body)
-		defer res.Body.Close()
-		if err != nil {
-			return err
-		}
-		return fmt.Errorf("error creating group: %s %s", res.Status, respBody)
+	if err != nil {
+		return "", err
 	}
-	return err
+	respBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != 201 {
+		if err != nil {
+			return "", err
+		}
+		return "", fmt.Errorf("error creating group: %s %s", res.Status, string(respBody))
+	}
+	payload := createGroupResponse{}
+	err = json.Unmarshal(respBody, &payload)
+	return payload.Id, err
 }
 func (c *Client) DeleteGroup(groupId string) error {
 
