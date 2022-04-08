@@ -20,8 +20,10 @@ func main() {
 	// get environment variable
 	signalHost := os.Getenv("SIGNAL_HOST")
 	signalNumber := os.Getenv("SIGNAL_NUMBER")
+	recipient := os.Getenv("SIGNAL_RECIPIENT")
 	fmt.Println("signalHost: ", signalHost)
 	fmt.Println("signalNumber: ", signalNumber)
+	fmt.Println("signalRecipient: ", recipient)
 	signalClient, err := signal.NewClient(signal.Host(signalHost), signal.Number(signalNumber))
 	if err != nil {
 		panic(err)
@@ -63,7 +65,7 @@ func main() {
 			panic(err)
 		}
 	}
-	glue.New(whatsappClient, signalClient)
+	glue.New(whatsappClient, signalClient, glue.SignalRecipient(recipient))
 
 	// Listen to Ctrl+C (you can also do something else that prevents the program from exiting)
 	c := make(chan os.Signal, 1)

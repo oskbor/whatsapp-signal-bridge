@@ -13,6 +13,7 @@ type Glue struct {
 	wa    *whatsmeow.Client
 	si    *signal.Client
 	store *Store
+	cfg   *config
 }
 
 func (g *Glue) onWhatsAppEvent(evt interface{}) {
@@ -32,7 +33,14 @@ func (g *Glue) onSignalMessage(message signal.ReceivedMessage) {
 
 }
 
-func New(whatsmeow *whatsmeow.Client, si *signal.Client) *Glue {
+func New(whatsmeow *whatsmeow.Client, si *signal.Client, options ...Option) *Glue {
+	cfg := &config{}
+	for _, option := range options {
+		option(cfg)
+	}
+	if cfg.SignalRecipient == "" {
+		panic("SignalRecipient is required")
+	}
 	db, err := sql.Open("sqlite3", "file:glue.db?_foreign_keys=on")
 	if err != nil {
 		panic(fmt.Errorf("failed to open database: %w", err))
@@ -45,6 +53,7 @@ func New(whatsmeow *whatsmeow.Client, si *signal.Client) *Glue {
 		wa:    whatsmeow,
 		si:    si,
 		store: store,
+		cfg:   cfg,
 	}
 
 	g.wa.AddEventHandler(g.onWhatsAppEvent)
