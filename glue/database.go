@@ -2,18 +2,15 @@ package glue
 
 import (
 	"database/sql"
+	"errors"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-/*
 var (
-	ErrDuplicate    = errors.New("record already exists")
-	ErrNotExists    = errors.New("row not exists")
-	ErrUpdateFailed = errors.New("update failed")
-	ErrDeleteFailed = errors.New("delete failed")
+	ErrNotFound = errors.New("not found")
 )
-*/
+
 type Store struct {
 	db *sql.DB
 }
@@ -51,6 +48,9 @@ func (s *Store) GetSignalGroupId(whatsappConversation string) (string, error) {
 	var signalGroupId string
 	err := s.db.QueryRow(query, whatsappConversation).Scan(&signalGroupId)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", ErrNotFound
+		}
 		return "", err
 	}
 	return signalGroupId, nil
@@ -65,15 +65,18 @@ func (s *Store) GetWhatsAppConversationId(signalGroupId string) (string, error) 
 	var whatsappGroupId string
 	err := s.db.QueryRow(query, signalGroupId).Scan(&whatsappGroupId)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", ErrNotFound
+		}
 		return "", err
 	}
 	return whatsappGroupId, nil
 }
-func (s *Store) LinkGroups(whatsappConversation, signalGroupId string) error {
+func (s *Store) LinkGroups(whatsAppConversation, signalGroupId string) error {
 	query := `
 	INSERT INTO glue(whatsapp_conversation, signal_group)
 	VALUES(?, ?)
 	`
-	_, err := s.db.Exec(query, whatsappConversation, signalGroupId)
+	_, err := s.db.Exec(query, whatsAppConversation, signalGroupId)
 	return err
 }
