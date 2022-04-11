@@ -10,6 +10,13 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+type Attachment struct {
+	ContentType string `json:"contentType"`
+	Filename    string `json:"filename"`
+	Id          string `json:"id"`
+	Size        int64  `json:"size"`
+}
+
 type ReceivedMessage struct {
 	Envelope struct {
 		Source       string
@@ -24,7 +31,7 @@ type ReceivedMessage struct {
 			ExpiresInSeconds int
 			ViewOnce         bool
 			Mentions         []interface{}
-			Attachments      []interface{}
+			Attachments      []Attachment
 			Contacts         []interface{}
 			GroupInfo        struct {
 				GroupId string

@@ -1,12 +1,17 @@
 package glue
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/oskbor/bridge/signal"
 	"go.mau.fi/whatsmeow"
+	waProto "go.mau.fi/whatsmeow/binary/proto"
+	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
+	"google.golang.org/protobuf/proto"
 )
 
 type Glue struct {
@@ -45,7 +50,105 @@ func (g *Glue) onWhatsAppEvent(evt interface{}) {
 
 }
 func (g *Glue) onSignalMessage(message signal.ReceivedMessage) {
-	fmt.Println("got message", message)
+	fmt.Println("got signal message", message)
+
+	whatsappConversation, err := g.store.GetWhatsAppConversationId(message.Envelope.DataMessage.GroupInfo.GroupId)
+	if err != nil {
+		g.OnError(err)
+		return
+	}
+	jid, err := types.ParseJID(whatsappConversation)
+	if err != nil {
+		g.OnError(err)
+		return
+	}
+	waTextMessage := &waProto.Message{
+		Conversation: &message.Envelope.DataMessage.Message,
+	}
+	_, err = g.wa.SendMessage(jid, "", waTextMessage)
+	if err != nil {
+		g.OnError(err)
+		return
+	}
+	for _, attachment := range message.Envelope.DataMessage.Attachments {
+		waMessage := &waProto.Message{}
+		bytes, err := g.si.DownloadAttachment(attachment.Id)
+		if err != nil {
+			g.OnError(err)
+			return
+		}
+
+		if strings.HasPrefix(attachment.ContentType, "image/") {
+			resp, err := g.wa.Upload(context.Background(), bytes, whatsmeow.MediaImage)
+			if err != nil {
+				g.OnError(err)
+				return
+			}
+			waImageMessage := &waProto.ImageMessage{
+				Mimetype:      proto.String(attachment.ContentType),
+				Url:           &resp.URL,
+				DirectPath:    &resp.DirectPath,
+				MediaKey:      resp.MediaKey,
+				FileEncSha256: resp.FileEncSHA256,
+				FileSha256:    resp.FileSHA256,
+				FileLength:    &resp.FileLength,
+			}
+			waMessage.ImageMessage = waImageMessage
+
+		} else if strings.HasPrefix(attachment.ContentType, "video/") {
+			resp, err := g.wa.Upload(context.Background(), bytes, whatsmeow.MediaVideo)
+			if err != nil {
+				g.OnError(err)
+				return
+			}
+			waVideoMessage := &waProto.VideoMessage{
+				Mimetype:      proto.String(attachment.ContentType),
+				Url:           &resp.URL,
+				DirectPath:    &resp.DirectPath,
+				MediaKey:      resp.MediaKey,
+				FileEncSha256: resp.FileEncSHA256,
+				FileSha256:    resp.FileSHA256,
+				FileLength:    &resp.FileLength,
+			}
+			waMessage.VideoMessage = waVideoMessage
+
+		} else if strings.HasPrefix(attachment.ContentType, "audio/") {
+			resp, err := g.wa.Upload(context.Background(), bytes, whatsmeow.MediaAudio)
+			if err != nil {
+				g.OnError(err)
+				return
+			}
+			waAudioMessage := &waProto.AudioMessage{
+				Mimetype:      proto.String(attachment.ContentType),
+				Url:           &resp.URL,
+				DirectPath:    &resp.DirectPath,
+				MediaKey:      resp.MediaKey,
+				FileEncSha256: resp.FileEncSHA256,
+				FileSha256:    resp.FileSHA256,
+				FileLength:    &resp.FileLength,
+			}
+			waMessage.AudioMessage = waAudioMessage
+
+		} else {
+			resp, err := g.wa.Upload(context.Background(), bytes, whatsmeow.MediaDocument)
+			if err != nil {
+				g.OnError(err)
+				return
+			}
+			waFileMessage := &waProto.DocumentMessage{
+				Mimetype:      proto.String(attachment.ContentType),
+				Url:           &resp.URL,
+				DirectPath:    &resp.DirectPath,
+				MediaKey:      resp.MediaKey,
+				FileEncSha256: resp.FileEncSHA256,
+				FileSha256:    resp.FileSHA256,
+				FileLength:    &resp.FileLength,
+			}
+			waMessage.DocumentMessage = waFileMessage
+		}
+
+		g.wa.SendMessage(jid, "", waMessage)
+	}
 
 }
 
@@ -103,11 +206,11 @@ func (g *Glue) GetOrCreateSignalGroup(waMessage *events.Message) (string, error)
 		}
 		signalGroupId, err = g.si.CreateGroup(waChatName+" on WhatsApp", SIGNAL_GROUP_DESCRIPTION, signal.Disabled, []string{g.cfg.SignalRecipient}, signal.OnlyAdmins, signal.EveryMember)
 		if err != nil {
-			return "", fmt.Errorf("failed to create signal group: %v\n", err)
+			return "", fmt.Errorf("failed to create signal group: %v", err)
 		}
 		err = g.store.LinkGroups(conversationId.String(), signalGroupId)
 		if err != nil {
-			return "", fmt.Errorf("failed to link groups: %v\n", err)
+			return "", fmt.Errorf("failed to link groups: %v", err)
 		}
 	} else if err != nil {
 		return "", err
