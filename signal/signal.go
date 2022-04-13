@@ -117,7 +117,7 @@ func (c *Client) SendMessage(message string, recipients, base64attachments []str
 		return nil
 	}
 	res, err := http.Post("http://"+c.config.Host+"/v2/send", "application/json", bytes.NewReader(body))
-	if res.StatusCode != 200 {
+	if res.StatusCode != 201 {
 		return fmt.Errorf("error sending message: %s", res.Status)
 	}
 	return err
