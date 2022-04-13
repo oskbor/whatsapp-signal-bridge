@@ -38,7 +38,7 @@ func (g *Glue) onWhatsAppEvent(evt interface{}) {
 		text := g.ExtractTextContent(msg)
 		attachments := g.ExtractAttachments(msg)
 
-		err = g.si.SendMessage(text, []string{groupId}, attachments)
+		err = g.si.SendMessage(msg.Info.PushName+": "+text, []string{groupId}, attachments)
 		if err != nil {
 			g.OnError(err)
 			return
