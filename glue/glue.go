@@ -37,6 +37,9 @@ func (g *Glue) onWhatsAppEvent(evt interface{}) {
 		}
 		text := g.ExtractTextContent(msg)
 		attachments := g.ExtractAttachments(msg)
+		if len(text) == 0 && len(attachments) == 0 {
+			fmt.Printf("Empty message, skipping %+v\n", msg)
+		}
 
 		err = g.si.SendMessage(msg.Info.PushName+": "+text, []string{groupId}, attachments)
 		if err != nil {
