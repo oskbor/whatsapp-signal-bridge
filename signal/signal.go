@@ -40,9 +40,14 @@ type ReceivedMessage struct {
 			Destination       string
 			DestinationNumber string
 			DestinationUuid   string
-		}
+		} `json:"dataMessage,omitempty"`
 	}
 }
+
+func (message *ReceivedMessage) IsEmpty() bool {
+	return message.Envelope.DataMessage.Timestamp == 0
+}
+
 type Client struct {
 	channel chan ReceivedMessage
 	config  *config
@@ -79,8 +84,11 @@ func NewClient(options ...Option) (*Client, error) {
 				if err != nil {
 					panic(err)
 				}
-				fmt.Printf("%+v", messageStruct)
-				channel <- messageStruct
+				if !messageStruct.IsEmpty() {
+					channel <- messageStruct
+				} else {
+					fmt.Println("empty message, ignoring")
+				}
 
 			} else {
 				panic("Unexpected message type received on websocket")

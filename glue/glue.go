@@ -41,7 +41,7 @@ func (g *Glue) onWhatsAppEvent(evt interface{}) {
 		if len(text) == 0 && len(attachments) == 0 {
 			fmt.Printf("Empty message, skipping %+v\n", msg)
 		}
-
+		fmt.Println("forwarding wa message to signal group " + groupId)
 		err = g.si.SendMessage(msg.Info.PushName+": "+text, []string{groupId}, attachments)
 		if err != nil {
 			g.OnError(err)
@@ -54,7 +54,7 @@ func (g *Glue) onWhatsAppEvent(evt interface{}) {
 
 }
 func (g *Glue) onSignalMessage(message signal.ReceivedMessage) {
-	fmt.Printf("got signal message %+v\n\n", message)
+	fmt.Printf("\ngot signal message %+v\n\n", message)
 
 	whatsappConversation, err := g.store.GetWhatsAppConversationId(message.Envelope.DataMessage.GroupInfo.GroupId)
 	if err != nil {
@@ -191,7 +191,6 @@ func (g *Glue) OnError(e error) {
 func (g *Glue) GetOrCreateSignalGroup(waMessage *events.Message) (string, error) {
 	conversationId := waMessage.Info.MessageSource.Chat
 	signalGroupId, err := g.store.GetSignalGroupId(conversationId.String())
-
 	if err == ErrNotFound {
 		var waChatName string
 		if waMessage.Info.IsGroup {
@@ -208,14 +207,23 @@ func (g *Glue) GetOrCreateSignalGroup(waMessage *events.Message) (string, error)
 				waChatName = waMessage.Info.PushName
 			}
 		}
-		signalGroupId, err = g.si.CreateGroup(waChatName+" on WhatsApp", SIGNAL_GROUP_DESCRIPTION, signal.Disabled, []string{g.cfg.SignalRecipient}, signal.OnlyAdmins, signal.EveryMember)
+		waChatName = waChatName + " on WhatsApp"
+		fmt.Println("Creating signal group " + waChatName)
+		signalGroupId, err = g.si.CreateGroup(waChatName, SIGNAL_GROUP_DESCRIPTION, signal.Disabled, []string{g.cfg.SignalRecipient}, signal.OnlyAdmins, signal.EveryMember)
 		if err != nil {
 			return "", fmt.Errorf("failed to create signal group: %w", err)
 		}
-		err = g.store.LinkGroups(conversationId.String(), signalGroupId)
+		fmt.Println("successfully created group with ID " + signalGroupId)
+		info, err := g.si.GetGroupInfo(signalGroupId)
+		if err != nil {
+			return "", fmt.Errorf("failed to get signal group info: %w", err)
+		}
+		fmt.Println("successfully fetched internal id for group", info.InternalId)
+		err = g.store.LinkGroups(conversationId.String(), signalGroupId, info.InternalId)
 		if err != nil {
 			return "", fmt.Errorf("failed to link groups: %w", err)
 		}
+		fmt.Println("link successful")
 	} else if err != nil {
 		return "", err
 	}

@@ -106,3 +106,35 @@ func (c *Client) DeleteGroup(groupId string) error {
 	}
 	return nil
 }
+
+type GroupInfo struct {
+	Name            string
+	Id              string
+	InternalId      string `json:"internal_id"`
+	Members         []string
+	Blocked         bool
+	PendingInvites  []string
+	PendingRequests []string
+	InviteLink      string
+}
+
+func (c *Client) GetGroupInfo(groupId string) (*GroupInfo, error) {
+	res, err := http.Get("http://" + c.config.Host + "/v1/groups/" + c.config.Number + "/" + groupId)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	if res.StatusCode != 200 {
+		return nil, fmt.Errorf("error getting group info: %s %s", res.Status, string(body))
+	}
+	group := GroupInfo{}
+	err = json.Unmarshal(body, &group)
+	if err != nil {
+		return nil, err
+	}
+	return &group, err
+}
