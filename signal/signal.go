@@ -59,7 +59,7 @@ func NewClient(options ...Option) (*Client, error) {
 		config:  config,
 	}
 	dialer := websocket.Dialer{}
-	conn, _, err := dialer.Dial("ws://"+config.Host+"/v1/receive/"+config.Host, nil)
+	conn, _, err := dialer.Dial("ws://"+config.Host+"/v1/receive/"+config.Number, nil)
 	if err != nil {
 		return nil, err
 	}
