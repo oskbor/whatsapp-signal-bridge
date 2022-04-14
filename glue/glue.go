@@ -53,7 +53,7 @@ func (g *Glue) onWhatsAppEvent(evt interface{}) {
 
 }
 func (g *Glue) onSignalMessage(message signal.ReceivedMessage) {
-	fmt.Println("got signal message", message)
+	fmt.Printf("got signal message %+v\n\n", message)
 
 	whatsappConversation, err := g.store.GetWhatsAppConversationId(message.Envelope.DataMessage.GroupInfo.GroupId)
 	if err != nil {
