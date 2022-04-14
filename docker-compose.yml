@@ -1,0 +1,26 @@
+version: '3'
+services:
+  signal:
+    image: bbernhard/signal-cli-rest-api:latest
+    container_name: signal
+    restart: always
+    environment:
+      - MODE=json-rpc
+    volumes: 
+      - ~/.whatsapp-signal-bridge/signal-cli:/home/.local/share/signal-cli
+      - ~/.whatsapp-signal-bridge/signal-api:/home/user/signal-api
+  bridge:
+    image: bridge:latest
+    build: .
+    depends_on:
+      - signal
+    container_name: bridge
+    restart: always
+    env_file: .env
+    environment:
+      - SIGNAL_HOST=signal:8080
+      - SIGNAL_RECIPIENT=${SIGNAL_RECIPIENT}
+      - SIGNAL_NUMBER=${SIGNAL_NUMBER}
+    volumes:
+      - ~/.whatsapp-signal-bridge/glue.db:/app/glue.db
+      - ~/.whatsapp-signal-bridge/whatsmeow.db:/app/whatsmeow.db
