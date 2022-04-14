@@ -209,11 +209,11 @@ func (g *Glue) GetOrCreateSignalGroup(waMessage *events.Message) (string, error)
 		}
 		signalGroupId, err = g.si.CreateGroup(waChatName+" on WhatsApp", SIGNAL_GROUP_DESCRIPTION, signal.Disabled, []string{g.cfg.SignalRecipient}, signal.OnlyAdmins, signal.EveryMember)
 		if err != nil {
-			return "", fmt.Errorf("failed to create signal group: %v", err)
+			return "", fmt.Errorf("failed to create signal group: %w", err)
 		}
 		err = g.store.LinkGroups(conversationId.String(), signalGroupId)
 		if err != nil {
-			return "", fmt.Errorf("failed to link groups: %v", err)
+			return "", fmt.Errorf("failed to link groups: %w", err)
 		}
 	} else if err != nil {
 		return "", err
