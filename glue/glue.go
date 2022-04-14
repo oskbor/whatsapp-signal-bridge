@@ -26,13 +26,14 @@ const SIGNAL_GROUP_DESCRIPTION = "Whatsapp <-> Signal bridge group"
 func (g *Glue) onWhatsAppEvent(evt interface{}) {
 	switch msg := evt.(type) {
 	case *events.Message:
-		isFromMe := msg.Info.MessageSource.IsFromMe
-		if isFromMe {
-			return
-		}
+
 		groupId, err := g.GetOrCreateSignalGroup(msg)
 		if err != nil {
 			g.OnError(err)
+			return
+		}
+		isFromMe := msg.Info.MessageSource.IsFromMe
+		if isFromMe {
 			return
 		}
 		text := g.ExtractTextContent(msg)
