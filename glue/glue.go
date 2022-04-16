@@ -164,7 +164,7 @@ func New(whatsmeow *whatsmeow.Client, si *signal.Client, options ...Option) *Glu
 	if cfg.SignalRecipient == "" {
 		panic("SignalRecipient is required")
 	}
-	db, err := sql.Open("sqlite3", "file:glue.db?_foreign_keys=on")
+	db, err := sql.Open("sqlite3", "file:./bridge/glue.db?_foreign_keys=on")
 	if err != nil {
 		panic(fmt.Errorf("failed to open database: %w", err))
 	}

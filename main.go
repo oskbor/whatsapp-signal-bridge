@@ -29,7 +29,7 @@ func main() {
 		panic(err)
 	}
 	dbLog := waLog.Stdout("Database", "DEBUG", true)
-	container, err := sqlstore.New("sqlite3", "file:whatsmeow.db?_foreign_keys=on", dbLog)
+	container, err := sqlstore.New("sqlite3", "file:./bridge/whatsmeow.db?_foreign_keys=on", dbLog)
 	if err != nil {
 		panic(err)
 	}

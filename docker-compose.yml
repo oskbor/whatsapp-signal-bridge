@@ -22,5 +22,4 @@ services:
       - SIGNAL_RECIPIENT=${SIGNAL_RECIPIENT}
       - SIGNAL_NUMBER=${SIGNAL_NUMBER}
     volumes:
-      - ~/.whatsapp-signal-bridge/glue.db:/app/glue.db
-      - ~/.whatsapp-signal-bridge/whatsmeow.db:/app/whatsmeow.db
+      - ~/.whatsapp-signal-bridge/bridge:/app/bridge
