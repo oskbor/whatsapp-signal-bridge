@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"net/http"
 
@@ -126,7 +127,13 @@ func (c *Client) SendMessage(message string, recipients, base64attachments []str
 	}
 	res, err := http.Post("http://"+c.config.Host+"/v2/send", "application/json", bytes.NewReader(body))
 	if res.StatusCode != 201 {
-		return fmt.Errorf("error sending message: %s", res.Status)
+		respBody, _ := io.ReadAll(res.Body)
+		defer res.Body.Close()
+		message := res.Status
+		if len(respBody) > 0 {
+			message += ": " + string(respBody)
+		}
+		return fmt.Errorf("error sending message: %s", message)
 	}
 	return err
 }
