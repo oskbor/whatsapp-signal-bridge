@@ -12,7 +12,7 @@ func (g *Glue) ExtractAttachments(message *events.Message) []string {
 	if err != nil {
 		return nil
 	}
-	return []string{base64.RawStdEncoding.EncodeToString(data)}
+	return []string{base64.StdEncoding.EncodeToString(data)}
 }
 
 func (g *Glue) ExtractTextContent(msg *events.Message) string {
