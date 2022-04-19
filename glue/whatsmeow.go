@@ -26,6 +26,12 @@ func (g *Glue) ExtractTextContent(msg *events.Message) string {
 		return msg.Message.GetConversation()
 	}
 	switch {
+	case msg.Message.ExtendedTextMessage != nil && msg.Message.ExtendedTextMessage.Text != nil:
+		text := *msg.Message.ExtendedTextMessage.Text
+		if msg.Message.ExtendedTextMessage.Description != nil {
+			text += "\n" + *msg.Message.ExtendedTextMessage.Description
+		}
+		return text
 	case msg.Message.ImageMessage != nil && msg.Message.ImageMessage.Caption != nil:
 		return *msg.Message.ImageMessage.Caption
 	case msg.Message.VideoMessage != nil && msg.Message.VideoMessage.Caption != nil:
