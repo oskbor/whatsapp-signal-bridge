@@ -6,3 +6,4 @@
 - [ ] When you are added to a WhatsApp group, forward that as a message (Added by whom?)
 - [ ] Notify on calls/ missed calls
 - [ ] Notify on group updates?
+- [ ] Mark as read

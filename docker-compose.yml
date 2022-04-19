@@ -10,7 +10,7 @@ services:
       - ~/.whatsapp-signal-bridge/signal-cli:/home/.local/share/signal-cli
       - ~/.whatsapp-signal-bridge/signal-api:/home/user/signal-api
   bridge:
-    image: bridge:latest
+    image: oskbor/whatsapp-signal-bridge:latest
     build: .
     depends_on:
       - signal
