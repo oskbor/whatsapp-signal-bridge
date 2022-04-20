@@ -79,4 +79,4 @@ echo "New version is $NEW_VERSION"
 docker tag oskbor/whatsapp-signal-bridge:latest oskbor/whatsapp-signal-bridge:v$NEW_VERSION 
 docker push oskbor/whatsapp-signal-bridge:v$NEW_VERSION
 docker push oskbor/whatsapp-signal-bridge:latest
-git commit -m"v$NEW_VERSION"  --allow-empty && git tag v"$NEW_VERSION" && git push origin --follow-tags
+git commit -m"v$NEW_VERSION"  --allow-empty && git tag v"$NEW_VERSION" && git push origin --tags
