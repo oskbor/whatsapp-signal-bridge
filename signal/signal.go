@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/oskbor/bridge/logging"
 )
 
 type Attachment struct {
@@ -56,10 +57,15 @@ type Client struct {
 
 func NewClient(options ...Option) (*Client, error) {
 	channel := make(chan ReceivedMessage)
-	config := &config{}
+	config := &config{
+		Logger: logging.DefaultLogger("signal-wrapper"),
+	}
 	for _, option := range options {
 		option(config)
 	}
+	config.Logger.Debug().Msgf("using host %s", config.Host)
+	config.Logger.Debug().Msgf("using number %s", config.Number)
+
 	connection := Client{
 		channel: channel,
 		config:  config,
@@ -69,7 +75,7 @@ func NewClient(options ...Option) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Listening for signal messages on", conn.RemoteAddr())
+	config.Logger.Info().Msgf("Listening for signal messages on %s", conn.RemoteAddr())
 	go func() {
 		defer conn.Close()
 		defer close(channel)
@@ -79,7 +85,7 @@ func NewClient(options ...Option) (*Client, error) {
 				panic(err)
 			}
 			if messageType == websocket.TextMessage {
-				fmt.Println("got message", string(bytes))
+				config.Logger.Debug().Msg("got message" + string(bytes))
 				messageStruct := ReceivedMessage{}
 				err := json.Unmarshal(bytes, &messageStruct)
 				if err != nil {
@@ -88,7 +94,7 @@ func NewClient(options ...Option) (*Client, error) {
 				if !messageStruct.IsEmpty() {
 					channel <- messageStruct
 				} else {
-					fmt.Println("empty message, ignoring")
+					config.Logger.Debug().Msg("the message seems empty, ignoring")
 				}
 
 			} else {

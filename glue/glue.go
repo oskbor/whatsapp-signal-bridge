@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/oskbor/bridge/logging"
 	"github.com/oskbor/bridge/signal"
 	"go.mau.fi/whatsmeow"
 	waProto "go.mau.fi/whatsmeow/binary/proto"
@@ -39,22 +40,19 @@ func (g *Glue) onWhatsAppEvent(evt interface{}) {
 		text := g.ExtractTextContent(msg)
 		attachments := g.ExtractAttachments(msg)
 		if len(text) == 0 && len(attachments) == 0 {
-			fmt.Printf("Empty message, skipping %+v\n", msg)
+			g.cfg.Logger.Warn().Msgf("Empty message, skipping %+v\n", msg)
+			return
 		}
-		fmt.Println("forwarding wa message to signal group " + groupId)
 		err = g.si.SendMessage(msg.Info.PushName+": "+text, []string{groupId}, attachments)
 		if err != nil {
 			g.OnError(err)
 			return
 		}
-
-	default:
-		fmt.Printf("Received an unhandled event! \n\n %+v\n\n", msg)
 	}
 
 }
 func (g *Glue) onSignalMessage(message signal.ReceivedMessage) {
-	fmt.Printf("\ngot signal message %+v\n\n", message)
+	g.cfg.Logger.Debug().Msgf("got signal message %+v\n", message)
 
 	whatsappConversation, err := g.store.GetWhatsAppConversationId(message.Envelope.DataMessage.GroupInfo.GroupId)
 	if err != nil {
@@ -157,10 +155,13 @@ func (g *Glue) onSignalMessage(message signal.ReceivedMessage) {
 }
 
 func New(whatsmeow *whatsmeow.Client, si *signal.Client, options ...Option) *Glue {
-	cfg := &config{}
+	cfg := &config{
+		Logger: logging.DefaultLogger("glue"),
+	}
 	for _, option := range options {
 		option(cfg)
 	}
+	cfg.Logger.Debug().Msgf("using recipient %s", cfg.SignalRecipient)
 	if cfg.SignalRecipient == "" {
 		panic("SignalRecipient is required")
 	}
@@ -185,7 +186,7 @@ func New(whatsmeow *whatsmeow.Client, si *signal.Client, options ...Option) *Glu
 
 }
 func (g *Glue) OnError(e error) {
-	fmt.Println("[glue error]", error.Error(e))
+	g.cfg.Logger.Error().Msg(e.Error())
 }
 
 func (g *Glue) GetOrCreateSignalGroup(waMessage *events.Message) (string, error) {
@@ -208,22 +209,22 @@ func (g *Glue) GetOrCreateSignalGroup(waMessage *events.Message) (string, error)
 			}
 		}
 		waChatName = waChatName + " on WhatsApp"
-		fmt.Println("Creating signal group " + waChatName)
+		g.cfg.Logger.Debug().Msg("Creating signal group " + waChatName)
 		signalGroupId, err = g.si.CreateGroup(waChatName, SIGNAL_GROUP_DESCRIPTION, signal.Disabled, []string{g.cfg.SignalRecipient}, signal.OnlyAdmins, signal.EveryMember)
 		if err != nil {
 			return "", fmt.Errorf("failed to create signal group: %w", err)
 		}
-		fmt.Println("successfully created group with ID " + signalGroupId)
+		g.cfg.Logger.Debug().Msg("successfully created group with ID " + signalGroupId)
 		info, err := g.si.GetGroupInfo(signalGroupId)
 		if err != nil {
 			return "", fmt.Errorf("failed to get signal group info: %w", err)
 		}
-		fmt.Println("successfully fetched internal id for group", info.InternalId)
+		g.cfg.Logger.Debug().Msg("successfully fetched internal id for group " + info.InternalId)
 		err = g.store.LinkGroups(conversationId.String(), signalGroupId, info.InternalId)
 		if err != nil {
 			return "", fmt.Errorf("failed to link groups: %w", err)
 		}
-		fmt.Println("link successful")
+		g.cfg.Logger.Debug().Msg("link successful")
 	} else if err != nil {
 		return "", err
 	}

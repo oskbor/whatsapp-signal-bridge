@@ -21,9 +21,6 @@ func main() {
 	signalHost := os.Getenv("SIGNAL_HOST")
 	signalNumber := os.Getenv("SIGNAL_NUMBER")
 	recipient := os.Getenv("SIGNAL_RECIPIENT")
-	fmt.Println("signalHost: ", signalHost)
-	fmt.Println("signalNumber: ", signalNumber)
-	fmt.Println("signalRecipient: ", recipient)
 	signalClient, err := signal.NewClient(signal.Host(signalHost), signal.Number(signalNumber))
 	if err != nil {
 		panic(err)
